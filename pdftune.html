@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>PDFTune — Online PDF Editor</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%233452ff'/%3E%3Cstop offset='1' stop-color='%237a5cff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='24' height='24' rx='6' fill='url(%23g)'/%3E%3Cpath d='M5 2.5h7l4.5 4.5v12.7a1.8 1.8 0 0 1-1.8 1.8H5a1.8 1.8 0 0 1-1.8-1.8V4.3A1.8 1.8 0 0 1 5 2.5z' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M12 2.5V7h4.5' fill='none' stroke='%23fff' stroke-opacity='.55' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='17.3' cy='16.6' r='5.15' fill='%23fff'/%3E%3Cline x1='17.3' y1='16.6' x2='19.6' y2='14.4' stroke='%233452ff' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='17.3' cy='16.6' r='1' fill='%233452ff'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
@@ -38,37 +39,50 @@ button{font-family:inherit;}
 
 /* ---------- Drop / landing screen ---------- */
 #landing{
-  flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column;
-  background:
-    radial-gradient(1200px 600px at 15% -10%, #eef1ff 0%, transparent 60%),
-    radial-gradient(900px 500px at 100% 110%, #eefaf3 0%, transparent 55%),
-    var(--paper);
-  padding:32px; text-align:center;
+  flex:1; position:relative; overflow-y:auto; overflow-x:hidden;
 }
-.brandmark{display:flex; align-items:center; gap:10px; margin-bottom:34px;}
+#landingbg{
+  position:fixed; inset:0; z-index:0; background-size:cover; background-position:center;
+  opacity:0; transition:opacity .9s ease; filter:saturate(1.08) brightness(.98);
+}
+#landingbg.loaded{opacity:1;}
+#landingoverlay{
+  position:fixed; inset:0; z-index:1; pointer-events:none;
+  background:
+    linear-gradient(180deg, rgba(7,9,16,.5) 0%, rgba(7,9,16,.62) 45%, rgba(7,9,16,.86) 100%);
+}
+.landing-inner{
+  position:relative; z-index:2; min-height:100%; display:flex; flex-direction:column; align-items:center;
+  padding:48px 32px 70px; text-align:center;
+}
+.bgcredit{
+  position:fixed; right:12px; bottom:10px; z-index:2; font-size:10.5px; color:rgba(255,255,255,.55);
+}
+.brandmark{display:flex; align-items:center; gap:12px; margin-bottom:38px;}
 .brandmark .mark{
-  width:34px;height:34px;border-radius:9px;
+  width:52px;height:52px;border-radius:13px;
   background:linear-gradient(155deg, var(--accent), #7a5cff);
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 4px 14px -4px rgba(52,82,255,.55);
+  box-shadow:0 8px 24px -6px rgba(52,82,255,.65), inset 0 1px 0 rgba(255,255,255,.25);
 }
-.brandmark .mark svg{width:19px;height:19px;}
-.brandmark span{font-weight:750; font-size:19px; letter-spacing:-.01em; color:var(--ink);}
-.brandmark span em{font-style:normal; color:var(--accent);}
+.brandmark .mark svg{width:29px;height:29px;}
+.brandmark span{font-weight:750; font-size:26px; letter-spacing:-.015em; color:#fff;}
+.brandmark span em{font-style:normal; color:#a9b8ff;}
 #landing h1{
-  font-size:clamp(28px,4vw,44px); line-height:1.08; letter-spacing:-0.02em; margin:0 0 14px;
-  font-weight:650; max-width:760px;
+  font-size:clamp(30px,4.4vw,48px); line-height:1.08; letter-spacing:-0.02em; margin:0 0 14px;
+  font-weight:680; max-width:760px; color:#fff; text-shadow:0 2px 24px rgba(0,0,0,.35);
 }
-#landing h1 em{font-style:normal; color:var(--accent);}
+#landing h1 em{font-style:normal; color:#a9b8ff;}
 #landing p.sub{
-  font-size:17px; color:var(--ink-soft); max-width:560px; margin:0 0 34px; line-height:1.55;
+  font-size:17px; color:rgba(255,255,255,.86); max-width:560px; margin:0 0 34px; line-height:1.55;
+  text-shadow:0 1px 12px rgba(0,0,0,.3);
 }
 .dropzone{
-  width:min(640px,90vw); border:1.5px dashed #c7cbd6; border-radius:16px;
-  background:var(--panel); padding:44px 28px; cursor:pointer; transition:.15s ease;
-  box-shadow:var(--shadow);
+  width:min(640px,90vw); border:1.5px solid rgba(255,255,255,.5); border-radius:16px;
+  background:rgba(255,255,255,.97); backdrop-filter:blur(6px); padding:44px 28px; cursor:pointer; transition:.15s ease;
+  box-shadow:0 20px 50px -12px rgba(0,0,0,.5);
 }
-.dropzone:hover, .dropzone.drag{border-color:var(--accent); background:#fbfcff;}
+.dropzone:hover, .dropzone.drag{border-color:var(--accent); background:#fff;}
 .dropzone .icon{
   width:52px;height:52px;margin:0 auto 16px; border-radius:14px; background:var(--accent-soft);
   display:flex;align-items:center;justify-content:center;
@@ -82,17 +96,21 @@ button{font-family:inherit;}
   font-size:14px; font-weight:600; cursor:pointer;
 }
 .dropzone .choose:hover{background:#000;}
-#landing .meta{margin-top:22px; font-size:12.5px; color:#8a90a0; display:flex; gap:18px; flex-wrap:wrap; justify-content:center;}
+#landing .meta{margin-top:22px; font-size:12.5px; color:rgba(255,255,255,.72); display:flex; gap:18px; flex-wrap:wrap; justify-content:center;}
 #landing .meta span{display:flex;align-items:center;gap:6px;}
-#landing .meta svg{width:13px;height:13px;stroke:#8a90a0;}
+#landing .meta svg{width:13px;height:13px;stroke:rgba(255,255,255,.72);}
 #landing .err{
   margin-top:18px; background:var(--warn-soft); color:var(--warn); border:1px solid #f3ddc0;
   padding:10px 16px; border-radius:8px; font-size:13.5px; max-width:520px; display:none;
 }
-.faqwrap{margin-top:56px; max-width:640px; width:90vw; text-align:left;}
+.faqwrap{
+  margin-top:56px; max-width:640px; width:90vw; text-align:left; background:rgba(255,255,255,.97);
+  backdrop-filter:blur(6px); border-radius:16px; padding:26px 28px; box-shadow:0 20px 50px -16px rgba(0,0,0,.45);
+}
 .faqwrap h2{font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:#9aa0ad; font-weight:700; margin-bottom:14px;}
 .faqitem{border-top:1px solid var(--line-soft); padding:13px 2px; font-size:14px;}
-.faqitem b{display:block; font-weight:600; margin-bottom:3px;}
+.faqitem:first-of-type{border-top:none;}
+.faqitem b{display:block; font-weight:600; margin-bottom:3px; color:var(--ink);}
 .faqitem span{color:var(--ink-soft); font-size:13.5px; line-height:1.5;}
 
 /* ---------- Editor shell ---------- */
@@ -318,17 +336,21 @@ button{font-family:inherit;}
 
   <!-- ============ LANDING ============ -->
   <div id="landing">
+    <div id="landingbg"></div>
+    <div id="landingoverlay"></div>
+    <div class="landing-inner">
     <div class="brandmark">
       <div class="mark">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
-          <path d="M14 2v5h5" stroke-opacity=".55"/>
-          <line x1="7.2" y1="11.2" x2="16.8" y2="11.2" stroke-opacity=".85"/>
-          <circle cx="11.5" cy="11.2" r="1.15" fill="#fff" stroke="none"/>
-          <line x1="7.2" y1="14.5" x2="16.8" y2="14.5" stroke-opacity=".85"/>
-          <circle cx="14" cy="14.5" r="1.15" fill="#fff" stroke="none"/>
-          <line x1="7.2" y1="17.8" x2="16.8" y2="17.8" stroke-opacity=".85"/>
-          <circle cx="9.3" cy="17.8" r="1.15" fill="#fff" stroke="none"/>
+        <svg viewBox="0 0 24 24">
+          <path d="M5 2.5h7l4.5 4.5v12.7a1.8 1.8 0 0 1-1.8 1.8H5a1.8 1.8 0 0 1-1.8-1.8V4.3A1.8 1.8 0 0 1 5 2.5z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+          <path d="M12 2.5V7h4.5" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+          <line x1="6.2" y1="12.2" x2="10.2" y2="12.2" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-opacity=".85"/>
+          <line x1="6.2" y1="15.2" x2="9" y2="15.2" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-opacity=".85"/>
+          <circle cx="17.3" cy="16.6" r="5.15" fill="#fff"/>
+          <line x1="17.3" y1="16.6" x2="19.6" y2="14.4" stroke="#3452ff" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="17.3" cy="16.6" r="1" fill="#3452ff"/>
+          <circle cx="14.7" cy="14.2" r=".55" fill="#3452ff" fill-opacity=".55"/>
+          <circle cx="20" cy="18.9" r=".55" fill="#3452ff" fill-opacity=".55"/>
         </svg>
       </div>
       <span>PDF<em>Tune</em></span>
@@ -357,6 +379,8 @@ button{font-family:inherit;}
       <div class="faqitem"><b>Can I edit a scanned PDF?</b><span>Scanned pages can be made editable with built-in OCR text detection, flagged automatically when a page has no selectable text.</span></div>
       <div class="faqitem"><b>Is my uploaded PDF stored anywhere?</b><span>No. Everything happens locally in your browser tab; nothing is uploaded or saved on a server.</span></div>
     </div>
+    </div>
+    <div class="bgcredit" id="bgcredit"></div>
   </div>
 
   <!-- ============ EDITOR ============ -->
@@ -492,7 +516,41 @@ function makeBlankSlot(){
   return { id: uid(), sourceIndex: null, rotation: 0, textBoxes: [], ocrDone:true, edits: emptyEdits() };
 }
 
-/* ============================== Loading a PDF ============================== */
+/* ============================== Landing background (changes every load) ============================== */
+const BG_CATEGORIES = [
+  { q: "sports-car", label: "Cars" },
+  { q: "mountains", label: "Mountains" },
+  { q: "travel-landmark", label: "World" },
+  { q: "motorcycle", label: "Bikes" },
+  { q: "city-skyline", label: "City" },
+  { q: "ocean", label: "Ocean" },
+];
+function setRandomLandingBackground(){
+  const bgEl = document.getElementById('landingbg');
+  const creditEl = document.getElementById('bgcredit');
+  if (!bgEl) return;
+  const cat = BG_CATEGORIES[Math.floor(Math.random() * BG_CATEGORIES.length)];
+  const bust = Date.now();
+  const primaryUrl = `https://www.sourcesplash.com/i/random?q=${encodeURIComponent(cat.q)}&w=1920${'&t='+bust}`;
+  const fallbackUrl = `https://picsum.photos/seed/${bust}/1920/1080`;
+  const img = new Image();
+  img.onload = ()=>{
+    bgEl.style.backgroundImage = `url("${primaryUrl}")`;
+    bgEl.classList.add('loaded');
+    if (creditEl) creditEl.textContent = cat.label;
+  };
+  img.onerror = ()=>{
+    const img2 = new Image();
+    img2.onload = ()=>{
+      bgEl.style.backgroundImage = `url("${fallbackUrl}")`;
+      bgEl.classList.add('loaded');
+      if (creditEl) creditEl.textContent = "";
+    };
+    img2.src = fallbackUrl;
+  };
+  img.src = primaryUrl;
+}
+
 async function handleFile(file){
   if (!file) return;
   if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")){
@@ -599,15 +657,12 @@ function buildTopbar(){
   tb.innerHTML = `
     <div class="tb-group tb-brand">
       <div class="tb-logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
-          <path d="M14 2v5h5" stroke-opacity=".55"/>
-          <line x1="7.2" y1="11.2" x2="16.8" y2="11.2" stroke-opacity=".85"/>
-          <circle cx="11.5" cy="11.2" r="1.15" fill="#fff" stroke="none"/>
-          <line x1="7.2" y1="14.5" x2="16.8" y2="14.5" stroke-opacity=".85"/>
-          <circle cx="14" cy="14.5" r="1.15" fill="#fff" stroke="none"/>
-          <line x1="7.2" y1="17.8" x2="16.8" y2="17.8" stroke-opacity=".85"/>
-          <circle cx="9.3" cy="17.8" r="1.15" fill="#fff" stroke="none"/>
+        <svg viewBox="0 0 24 24">
+          <path d="M5 2.5h7l4.5 4.5v12.7a1.8 1.8 0 0 1-1.8 1.8H5a1.8 1.8 0 0 1-1.8-1.8V4.3A1.8 1.8 0 0 1 5 2.5z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+          <path d="M12 2.5V7h4.5" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle cx="17.3" cy="16.6" r="5.15" fill="#fff"/>
+          <line x1="17.3" y1="16.6" x2="19.6" y2="14.4" stroke="#3452ff" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="17.3" cy="16.6" r="1" fill="#3452ff"/>
         </svg>
       </div>
       <button class="tb-btn" id="btn-upload-new" data-tip="Open another PDF">${svg('upload')}</button>
@@ -1613,6 +1668,7 @@ function resetToLanding(){
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
+  setRandomLandingBackground();
   const dz = document.getElementById('dropzone');
   const fi = document.getElementById('fileinput');
   document.getElementById('choosebtn').addEventListener('click', (e)=>{ e.stopPropagation(); fi.click(); });
