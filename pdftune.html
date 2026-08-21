@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root{
   --ink:#16181d;
@@ -39,79 +40,167 @@ button{font-family:inherit;}
 
 /* ---------- Drop / landing screen ---------- */
 #landing{
-  flex:1; position:relative; overflow-y:auto; overflow-x:hidden;
+  flex:1; position:relative; overflow-y:auto; overflow-x:hidden; background:#fff;
 }
+
+/* Navbar */
+#navbar{
+  position:sticky; top:0; z-index:50; height:60px; display:flex; align-items:center; gap:22px;
+  padding:0 24px; background:rgba(255,255,255,.88); backdrop-filter:blur(10px); border-bottom:1px solid var(--line-soft);
+}
+.nav-brand{display:flex; align-items:center; gap:9px; cursor:pointer; margin-right:6px;}
+.nav-brand .mark{
+  width:30px;height:30px;border-radius:8px; background:linear-gradient(155deg, var(--accent), #7a5cff);
+  display:flex;align-items:center;justify-content:center; flex:none;
+  box-shadow:0 4px 12px -4px rgba(52,82,255,.55);
+}
+.nav-brand .mark svg{width:17px;height:17px;}
+.nav-brand span{font-weight:750; font-size:17px; letter-spacing:-.01em; color:var(--ink);}
+.nav-brand span em{font-style:normal; color:var(--accent);}
+.nav-links{display:flex; align-items:center; gap:4px;}
+.nav-links a{
+  font-size:13.5px; font-weight:600; color:var(--ink-soft); text-decoration:none; padding:8px 11px; border-radius:7px;
+}
+.nav-links a:hover{background:var(--line-soft); color:var(--ink);}
+#navbar .spacer{flex:1;}
+.nav-cta{
+  background:var(--ink); color:#fff; border:none; padding:0 16px; height:36px; border-radius:8px;
+  font-size:13.5px; font-weight:650; cursor:pointer;
+}
+.nav-cta:hover{background:#000;}
+
+/* Hero (photo confined to this section only, not the whole page) */
+#hero{position:relative; overflow:hidden; min-height:min(88vh,760px); display:flex; align-items:center; justify-content:center;}
 #landingbg{
-  position:fixed; inset:0; z-index:0; background-size:cover; background-position:center;
+  position:absolute; inset:0; z-index:0; background-size:cover; background-position:center;
   opacity:0; transition:opacity .9s ease; filter:saturate(1.08) brightness(.98);
 }
 #landingbg.loaded{opacity:1;}
 #landingoverlay{
-  position:fixed; inset:0; z-index:1; pointer-events:none;
-  background:
-    linear-gradient(180deg, rgba(7,9,16,.5) 0%, rgba(7,9,16,.62) 45%, rgba(7,9,16,.86) 100%);
+  position:absolute; inset:0; z-index:1; pointer-events:none;
+  background: linear-gradient(180deg, rgba(7,9,16,.52) 0%, rgba(7,9,16,.6) 45%, rgba(7,9,16,.88) 100%);
 }
-.landing-inner{
-  position:relative; z-index:2; min-height:100%; display:flex; flex-direction:column; align-items:center;
-  padding:48px 32px 70px; text-align:center;
+.hero-inner{
+  position:relative; z-index:2; width:100%; display:flex; flex-direction:column; align-items:center;
+  padding:64px 24px 56px; text-align:center;
 }
-.bgcredit{
-  position:fixed; right:12px; bottom:10px; z-index:2; font-size:10.5px; color:rgba(255,255,255,.55);
+.bgcredit{ position:absolute; right:14px; bottom:12px; z-index:2; font-size:10.5px; color:rgba(255,255,255,.55);}
+.herobadge{
+  display:inline-flex; align-items:center; gap:7px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.28);
+  color:#fff; font-size:12px; font-weight:650; padding:6px 13px; border-radius:99px; margin-bottom:20px; backdrop-filter:blur(4px);
 }
-.brandmark{display:flex; align-items:center; gap:12px; margin-bottom:38px;}
-.brandmark .mark{
-  width:52px;height:52px;border-radius:13px;
-  background:linear-gradient(155deg, var(--accent), #7a5cff);
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 8px 24px -6px rgba(52,82,255,.65), inset 0 1px 0 rgba(255,255,255,.25);
-}
-.brandmark .mark svg{width:29px;height:29px;}
-.brandmark span{font-weight:750; font-size:26px; letter-spacing:-.015em; color:#fff;}
-.brandmark span em{font-style:normal; color:#a9b8ff;}
+.herobadge .dot{width:6px;height:6px;border-radius:50%; background:#5ee88f; box-shadow:0 0 0 3px rgba(94,232,143,.25);}
 #landing h1{
-  font-size:clamp(30px,4.4vw,48px); line-height:1.08; letter-spacing:-0.02em; margin:0 0 14px;
-  font-weight:680; max-width:760px; color:#fff; text-shadow:0 2px 24px rgba(0,0,0,.35);
+  font-size:clamp(30px,4.4vw,50px); line-height:1.08; letter-spacing:-0.02em; margin:0 0 14px;
+  font-weight:680; max-width:780px; color:#fff; text-shadow:0 2px 24px rgba(0,0,0,.35);
 }
 #landing h1 em{font-style:normal; color:#a9b8ff;}
 #landing p.sub{
-  font-size:17px; color:rgba(255,255,255,.86); max-width:560px; margin:0 0 34px; line-height:1.55;
+  font-size:17px; color:rgba(255,255,255,.87); max-width:580px; margin:0 0 30px; line-height:1.55;
   text-shadow:0 1px 12px rgba(0,0,0,.3);
 }
+.herobullets{display:flex; flex-wrap:wrap; gap:9px 18px; justify-content:center; margin:0 0 30px; max-width:640px;}
+.herobullets span{display:flex; align-items:center; gap:6px; font-size:12.5px; color:rgba(255,255,255,.85); font-weight:600;}
+.herobullets svg{width:14px;height:14px; stroke:#8ef0ab;}
 .dropzone{
-  width:min(640px,90vw); border:1.5px solid rgba(255,255,255,.5); border-radius:16px;
-  background:rgba(255,255,255,.97); backdrop-filter:blur(6px); padding:44px 28px; cursor:pointer; transition:.15s ease;
+  width:min(600px,90vw); border:1.5px solid rgba(255,255,255,.5); border-radius:16px;
+  background:rgba(255,255,255,.97); backdrop-filter:blur(6px); padding:36px 28px; cursor:pointer; transition:.15s ease;
   box-shadow:0 20px 50px -12px rgba(0,0,0,.5);
 }
 .dropzone:hover, .dropzone.drag{border-color:var(--accent); background:#fff;}
 .dropzone .icon{
-  width:52px;height:52px;margin:0 auto 16px; border-radius:14px; background:var(--accent-soft);
+  width:48px;height:48px;margin:0 auto 14px; border-radius:13px; background:var(--accent-soft);
   display:flex;align-items:center;justify-content:center;
 }
-.dropzone .icon svg{width:24px;height:24px;stroke:var(--accent);}
-.dropzone .ttl{font-size:16px;font-weight:600;margin-bottom:4px;}
-.dropzone .hint{font-size:13.5px;color:var(--ink-soft);}
+.dropzone .icon svg{width:22px;height:22px;stroke:var(--accent);}
+.dropzone .ttl{font-size:15.5px;font-weight:600;margin-bottom:4px;}
+.dropzone .hint{font-size:13px;color:var(--ink-soft);}
 .dropzone .choose{
-  margin-top:18px; display:inline-flex; align-items:center; gap:8px;
+  margin-top:16px; display:inline-flex; align-items:center; gap:8px;
   background:var(--ink); color:#fff; border:none; padding:10px 20px; border-radius:8px;
-  font-size:14px; font-weight:600; cursor:pointer;
+  font-size:13.5px; font-weight:600; cursor:pointer;
 }
 .dropzone .choose:hover{background:#000;}
-#landing .meta{margin-top:22px; font-size:12.5px; color:rgba(255,255,255,.72); display:flex; gap:18px; flex-wrap:wrap; justify-content:center;}
+#landing .meta{margin-top:18px; font-size:12px; color:rgba(255,255,255,.72); display:flex; gap:16px; flex-wrap:wrap; justify-content:center;}
 #landing .meta span{display:flex;align-items:center;gap:6px;}
-#landing .meta svg{width:13px;height:13px;stroke:rgba(255,255,255,.72);}
+#landing .meta svg{width:12.5px;height:12.5px;stroke:rgba(255,255,255,.72);}
 #landing .err{
-  margin-top:18px; background:var(--warn-soft); color:var(--warn); border:1px solid #f3ddc0;
+  margin-top:16px; background:var(--warn-soft); color:var(--warn); border:1px solid #f3ddc0;
   padding:10px 16px; border-radius:8px; font-size:13.5px; max-width:520px; display:none;
 }
-.faqwrap{
-  margin-top:56px; max-width:640px; width:90vw; text-align:left; background:rgba(255,255,255,.97);
-  backdrop-filter:blur(6px); border-radius:16px; padding:26px 28px; box-shadow:0 20px 50px -16px rgba(0,0,0,.45);
+
+/* Section shell */
+.lsection{max-width:1080px; margin:0 auto; padding:74px 24px;}
+.lsection.tight{padding-top:56px; padding-bottom:56px;}
+.lsection-head{text-align:center; max-width:600px; margin:0 auto 42px;}
+.lsection-eyebrow{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--accent); margin-bottom:9px;}
+.lsection-head h2{font-size:clamp(24px,3vw,32px); letter-spacing:-.015em; margin:0 0 10px; color:var(--ink); font-weight:680;}
+.lsection-head p{font-size:15px; color:var(--ink-soft); line-height:1.55; margin:0;}
+
+/* Tools grid */
+#toolsgrid{background:var(--paper);}
+.toolgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px;}
+.toolcard{
+  background:var(--panel); border:1px solid var(--line); border-radius:13px; padding:20px 18px; cursor:pointer;
+  transition:.15s ease; text-align:left;
 }
-.faqwrap h2{font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:#9aa0ad; font-weight:700; margin-bottom:14px;}
-.faqitem{border-top:1px solid var(--line-soft); padding:13px 2px; font-size:14px;}
+.toolcard:hover{border-color:#c6d0ff; box-shadow:0 10px 26px -10px rgba(20,22,30,.16); transform:translateY(-2px);}
+.toolcard .ticon{
+  width:38px;height:38px;border-radius:10px; display:flex;align-items:center;justify-content:center; margin-bottom:13px;
+}
+.toolcard .ticon svg{width:19px;height:19px;}
+.toolcard h3{font-size:14.5px; font-weight:650; margin:0 0 4px; color:var(--ink);}
+.toolcard p{font-size:12.5px; color:var(--ink-soft); margin:0; line-height:1.45;}
+.toolcard .tsoon{
+  display:inline-block; margin-top:9px; font-size:10.5px; font-weight:700; color:var(--warn); background:var(--warn-soft);
+  padding:2px 8px; border-radius:99px;
+}
+
+/* Features */
+.featgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:22px 26px;}
+.featcard{text-align:left;}
+.featcard .ficon{
+  width:40px;height:40px;border-radius:10px; background:var(--accent-soft); display:flex;align-items:center;justify-content:center;
+  margin-bottom:14px;
+}
+.featcard .ficon svg{width:20px;height:20px; stroke:var(--accent);}
+.featcard h3{font-size:15px; font-weight:650; margin:0 0 6px; color:var(--ink);}
+.featcard p{font-size:13.5px; color:var(--ink-soft); line-height:1.55; margin:0;}
+
+/* FAQ */
+#faqsec{background:var(--paper);}
+.faqwrap{max-width:720px; margin:0 auto; text-align:left; background:var(--panel); border:1px solid var(--line);
+  border-radius:16px; padding:10px 28px; box-shadow:var(--shadow);}
+.faqitem{border-top:1px solid var(--line-soft); padding:16px 2px;}
 .faqitem:first-of-type{border-top:none;}
-.faqitem b{display:block; font-weight:600; margin-bottom:3px; color:var(--ink);}
-.faqitem span{color:var(--ink-soft); font-size:13.5px; line-height:1.5;}
+.faqitem b{display:block; font-weight:650; margin-bottom:4px; color:var(--ink); font-size:14.5px;}
+.faqitem span{color:var(--ink-soft); font-size:13.5px; line-height:1.55;}
+
+/* Footer */
+#sitefooter{background:#12141c; color:#c6c9d4; padding:52px 24px 26px;}
+.foot-inner{max-width:1080px; margin:0 auto; display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:34px;}
+.foot-brand{display:flex; align-items:center; gap:9px; margin-bottom:12px;}
+.foot-brand .mark{
+  width:28px;height:28px;border-radius:8px; background:linear-gradient(155deg, var(--accent), #7a5cff);
+  display:flex;align-items:center;justify-content:center; flex:none;
+}
+.foot-brand .mark svg{width:16px;height:16px;}
+.foot-brand span{font-weight:750; font-size:16px; color:#fff;}
+.foot-brand span em{font-style:normal; color:#a9b8ff;}
+.foot-tagline{font-size:13px; line-height:1.6; color:#8b8fa0; max-width:280px;}
+.foot-col h4{font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:#7d8093; margin:0 0 13px; font-weight:700;}
+.foot-col a{display:block; font-size:13px; color:#c6c9d4; text-decoration:none; margin-bottom:9px; cursor:pointer;}
+.foot-col a:hover{color:#fff;}
+.foot-bottom{
+  max-width:1080px; margin:34px auto 0; padding-top:20px; border-top:1px solid #262936;
+  font-size:12px; color:#6b6f80; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;
+}
+@media (max-width:900px){
+  .toolgrid{grid-template-columns:repeat(2,1fr);}
+  .featgrid{grid-template-columns:1fr;}
+  .foot-inner{grid-template-columns:1fr 1fr;}
+  .nav-links{display:none;}
+}
 
 /* ---------- Editor shell ---------- */
 #editor{flex:1; display:none; min-height:0; flex-direction:column;}
@@ -329,6 +418,106 @@ button{font-family:inherit;}
   .filename{display:none;}
   #viewport{padding:16px 10px 70px;}
 }
+
+/* ---------- Quick tool workspace (Merge/Split/Organize/Watermark/Compress/Convert) ---------- */
+#quicktool{flex:1; display:none; min-height:0; flex-direction:column; background:var(--paper);}
+#quicktool.active{display:flex;}
+#qt-topbar{
+  height:56px; flex:none; display:flex; align-items:center; gap:12px; padding:0 20px;
+  background:var(--panel); border-bottom:1px solid var(--line);
+}
+#qt-back{
+  width:32px;height:32px;border-radius:8px; border:1px solid var(--line); background:transparent; cursor:pointer;
+  display:flex;align-items:center;justify-content:center; color:var(--ink); flex:none;
+}
+#qt-back:hover{background:var(--line-soft);}
+#qt-back svg{width:16px;height:16px;}
+#qt-title{font-size:15px; font-weight:700; color:var(--ink);}
+#qt-sub{font-size:12px; color:var(--ink-soft);}
+#qt-body{flex:1; overflow-y:auto; display:flex; flex-direction:column; align-items:center; padding:32px 20px 60px;}
+.qt-upload{
+  width:min(560px,92vw); border:1.5px dashed #c7cbd6; border-radius:16px; background:var(--panel);
+  padding:40px 24px; text-align:center; cursor:pointer; transition:.15s ease;
+}
+.qt-upload:hover, .qt-upload.drag{border-color:var(--accent); background:#fbfcff;}
+.qt-upload .icon{
+  width:46px;height:46px;margin:0 auto 14px; border-radius:12px; background:var(--accent-soft);
+  display:flex;align-items:center;justify-content:center;
+}
+.qt-upload .icon svg{width:22px;height:22px;stroke:var(--accent);}
+.qt-upload .ttl{font-size:15px; font-weight:650; margin-bottom:4px;}
+.qt-upload .hint{font-size:12.5px; color:var(--ink-soft);}
+.qt-workarea{width:100%; max-width:980px; display:flex; flex-direction:column; gap:20px;}
+.qt-panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px 22px;}
+.qt-panel h4{font-size:13px; font-weight:700; margin:0 0 14px; color:var(--ink);}
+.qt-filerow{
+  display:flex; align-items:center; gap:12px; padding:10px; border:1px solid var(--line-soft); border-radius:10px; margin-bottom:8px;
+  background:#fbfbfc;
+}
+.qt-filerow:last-child{margin-bottom:0;}
+.qt-filerow .fthumb{
+  width:38px;height:50px; background:#fff; border:1px solid var(--line); border-radius:4px; flex:none; overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.qt-filerow .fthumb svg{width:16px;height:16px; stroke:#b7bac4;}
+.qt-filerow .fname{flex:1; font-size:13px; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.qt-filerow .fsize{font-size:11.5px; color:var(--ink-soft); flex:none;}
+.qt-filerow .ficonbtn{
+  width:26px;height:26px;border-radius:6px; border:none; background:transparent; cursor:pointer; color:var(--ink-soft);
+  display:flex;align-items:center;justify-content:center; flex:none;
+}
+.qt-filerow .ficonbtn:hover{background:var(--line-soft); color:var(--danger);}
+.qt-filerow .ficonbtn svg{width:15px;height:15px;}
+.qt-filerow.drag-over{border-color:var(--accent); background:var(--accent-soft);}
+.qt-addmore{
+  width:100%; border:1.5px dashed #c7cbd6; background:transparent; border-radius:10px; padding:12px;
+  font-size:12.5px; color:var(--ink-soft); cursor:pointer; font-weight:600; margin-top:4px;
+}
+.qt-addmore:hover{border-color:var(--accent); color:var(--accent);}
+.qt-pagegrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(108px,1fr)); gap:12px;}
+.qt-pagecard{
+  border:1.5px solid var(--line); border-radius:9px; padding:8px; text-align:center; cursor:pointer; position:relative;
+  background:#fff; transition:.12s ease;
+}
+.qt-pagecard.sel{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
+.qt-pagecard .pth{
+  aspect-ratio:0.77; background:#fff; border:1px solid var(--line-soft); border-radius:5px; overflow:hidden; margin-bottom:6px;
+  display:flex;align-items:center;justify-content:center;
+}
+.qt-pagecard .pth canvas{width:100%;height:100%;object-fit:contain;}
+.qt-pagecard .plabel{font-size:11px; font-weight:650; color:var(--ink-soft);}
+.qt-pagecard .pdel{
+  position:absolute; top:4px; right:4px; width:19px;height:19px; border-radius:50%; background:rgba(20,22,30,.75);
+  border:none; display:none; align-items:center; justify-content:center; cursor:pointer;
+}
+.qt-pagecard:hover .pdel{display:flex;}
+.qt-pagecard .pdel svg{width:10px;height:10px; stroke:#fff;}
+.qt-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.qt-field{display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--ink-soft); font-weight:600;}
+.qt-field input[type=text], .qt-field input[type=number], .qt-field select{
+  border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:13px; font-family:inherit; color:var(--ink);
+}
+.qt-field input[type=range]{width:140px;}
+.qt-primary-btn{
+  background:linear-gradient(135deg, var(--accent), #7a5cff); color:#fff; border:none; padding:0 26px; height:44px;
+  border-radius:22px; font-size:14px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:9px;
+  box-shadow:0 6px 18px -4px rgba(52,82,255,.5); align-self:center;
+}
+.qt-primary-btn:hover{transform:translateY(-1px);}
+.qt-primary-btn:disabled{opacity:.45; cursor:default; transform:none;}
+.qt-primary-btn svg{width:16px;height:16px;}
+.qt-swatchrow{display:flex; gap:7px;}
+.qt-donebox{
+  width:min(480px,92vw); text-align:center; background:var(--panel); border:1px solid var(--line); border-radius:16px;
+  padding:38px 28px;
+}
+.qt-donebox .dicon{
+  width:56px;height:56px; border-radius:50%; background:#e7f9ee; display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;
+}
+.qt-donebox .dicon svg{width:26px;height:26px; stroke:#1f9d55;}
+.qt-donebox h3{font-size:17px; margin:0 0 8px;}
+.qt-donebox p{font-size:13.5px; color:var(--ink-soft); margin:0 0 22px;}
 </style>
 </head>
 <body>
@@ -336,52 +525,120 @@ button{font-family:inherit;}
 
   <!-- ============ LANDING ============ -->
   <div id="landing">
-    <div id="landingbg"></div>
-    <div id="landingoverlay"></div>
-    <div class="landing-inner">
-    <div class="brandmark">
-      <div class="mark">
-        <svg viewBox="0 0 24 24">
-          <path d="M5 2.5h7l4.5 4.5v12.7a1.8 1.8 0 0 1-1.8 1.8H5a1.8 1.8 0 0 1-1.8-1.8V4.3A1.8 1.8 0 0 1 5 2.5z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
-          <path d="M12 2.5V7h4.5" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
-          <line x1="6.2" y1="12.2" x2="10.2" y2="12.2" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-opacity=".85"/>
-          <line x1="6.2" y1="15.2" x2="9" y2="15.2" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-opacity=".85"/>
-          <circle cx="17.3" cy="16.6" r="5.15" fill="#fff"/>
-          <line x1="17.3" y1="16.6" x2="19.6" y2="14.4" stroke="#3452ff" stroke-width="1.5" stroke-linecap="round"/>
-          <circle cx="17.3" cy="16.6" r="1" fill="#3452ff"/>
-          <circle cx="14.7" cy="14.2" r=".55" fill="#3452ff" fill-opacity=".55"/>
-          <circle cx="20" cy="18.9" r=".55" fill="#3452ff" fill-opacity=".55"/>
-        </svg>
+
+    <nav id="navbar">
+      <div class="nav-brand" id="navlogo">
+        <div class="mark">
+          <svg viewBox="0 0 24 24">
+            <path d="M5 2.5h7l4.5 4.5v12.7a1.8 1.8 0 0 1-1.8 1.8H5a1.8 1.8 0 0 1-1.8-1.8V4.3A1.8 1.8 0 0 1 5 2.5z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M12 2.5V7h4.5" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle cx="17.3" cy="16.6" r="5.15" fill="#fff"/>
+            <line x1="17.3" y1="16.6" x2="19.6" y2="14.4" stroke="#3452ff" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="17.3" cy="16.6" r="1" fill="#3452ff"/>
+          </svg>
+        </div>
+        <span>PDF<em>Tune</em></span>
       </div>
-      <span>PDF<em>Tune</em></span>
-    </div>
-    <h1>Edit PDF online — <em>change text, images &amp; more</em></h1>
-    <p class="sub">Upload your PDF, edit its existing content directly, and download the finished PDF without converting it to another document format.</p>
+      <div class="nav-links">
+        <a href="#toolsgrid" data-scroll="toolsgrid">Tools</a>
+        <a href="#features" data-scroll="features">Why PDFTune</a>
+        <a href="#faqsec" data-scroll="faqsec">FAQ</a>
+      </div>
+      <div class="spacer"></div>
+      <button class="nav-cta" id="navcta">Open a PDF</button>
+    </nav>
 
-    <div class="dropzone" id="dropzone">
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>
-      <div class="ttl">Drop your PDF here</div>
-      <div class="hint">or choose a file from your device · up to 40&nbsp;MB</div>
-      <button class="choose" id="choosebtn" type="button">Choose PDF</button>
-      <input type="file" id="fileinput" accept="application/pdf" hidden>
-    </div>
-    <div class="err" id="landingerr"></div>
+    <section id="hero">
+      <div id="landingbg"></div>
+      <div id="landingoverlay"></div>
+      <div class="hero-inner">
+        <div class="herobadge"><span class="dot"></span>100% free · runs in your browser</div>
+        <h1>Every PDF tool you need — <em>in one place</em></h1>
+        <p class="sub">Edit, merge, split, organize, watermark, compress, and convert PDFs — directly in your browser. No uploads to a server, no account, no watermark on your files.</p>
+        <div class="herobullets" id="herobullets"></div>
 
-    <div class="meta">
-      <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Your files are processed in your browser and are never uploaded to a server.</span>
-      <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>No account required</span>
-    </div>
+        <div class="dropzone" id="dropzone">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>
+          <div class="ttl">Drop your PDF here</div>
+          <div class="hint">or choose a file from your device · up to 40&nbsp;MB</div>
+          <button class="choose" id="choosebtn" type="button">Choose PDF</button>
+          <input type="file" id="fileinput" accept="application/pdf" hidden>
+        </div>
+        <div class="err" id="landingerr"></div>
 
-    <div class="faqwrap">
-      <h2>Frequently asked</h2>
-      <div class="faqitem"><b>How can I edit text in a PDF?</b><span>Click any line of existing text to edit it in place, or use Add Text to place new text anywhere on the page.</span></div>
-      <div class="faqitem"><b>Can I edit a PDF without converting it to Word?</b><span>Yes — this opens and edits the original PDF directly, then exports a real PDF, no round-trip through Word.</span></div>
-      <div class="faqitem"><b>Can I edit a scanned PDF?</b><span>Scanned pages can be made editable with built-in OCR text detection, flagged automatically when a page has no selectable text.</span></div>
-      <div class="faqitem"><b>Is my uploaded PDF stored anywhere?</b><span>No. Everything happens locally in your browser tab; nothing is uploaded or saved on a server.</span></div>
-    </div>
-    </div>
-    <div class="bgcredit" id="bgcredit"></div>
+        <div class="meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Files are processed in your browser and never uploaded to a server.</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>No account required</span>
+        </div>
+      </div>
+      <div class="bgcredit" id="bgcredit"></div>
+    </section>
+
+    <section id="toolsgrid" class="lsection">
+      <div class="lsection-head">
+        <div class="lsection-eyebrow">Toolkit</div>
+        <h2>Real, working PDF tools</h2>
+        <p>Every tool below actually runs — nothing here is a placeholder.</p>
+      </div>
+      <div class="toolgrid" id="toolgridhost"></div>
+    </section>
+
+    <section id="features" class="lsection tight">
+      <div class="lsection-head">
+        <div class="lsection-eyebrow">Why PDFTune</div>
+        <h2>Built to be fast, private, and honest</h2>
+        <p>No sign-up walls, no hidden watermarks, no surprise subscriptions.</p>
+      </div>
+      <div class="featgrid" id="featgridhost"></div>
+    </section>
+
+    <section id="faqsec" class="lsection">
+      <div class="lsection-head">
+        <div class="lsection-eyebrow">FAQ</div>
+        <h2>Frequently asked questions</h2>
+      </div>
+      <div class="faqwrap" id="faqhost"></div>
+    </section>
+
+    <footer id="sitefooter">
+      <div class="foot-inner">
+        <div>
+          <div class="foot-brand">
+            <div class="mark">
+              <svg viewBox="0 0 24 24">
+                <path d="M5 2.5h7l4.5 4.5v12.7a1.8 1.8 0 0 1-1.8 1.8H5a1.8 1.8 0 0 1-1.8-1.8V4.3A1.8 1.8 0 0 1 5 2.5z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+                <circle cx="17.3" cy="16.6" r="5.15" fill="#fff"/>
+                <line x1="17.3" y1="16.6" x2="19.6" y2="14.4" stroke="#3452ff" stroke-width="1.5" stroke-linecap="round"/>
+                <circle cx="17.3" cy="16.6" r="1" fill="#3452ff"/>
+              </svg>
+            </div>
+            <span>PDF<em>Tune</em></span>
+          </div>
+          <div class="foot-tagline">Free, private, browser-based PDF tools. Your files never leave your device.</div>
+        </div>
+        <div class="foot-col" id="footcol1"></div>
+        <div class="foot-col" id="footcol2"></div>
+        <div class="foot-col" id="footcol3"></div>
+      </div>
+      <div class="foot-bottom">
+        <span>© <span id="yr"></span> PDFTune. All processing happens locally in your browser.</span>
+        <span>Not affiliated with Adobe, Microsoft, or any other document platform.</span>
+      </div>
+    </footer>
   </div>
+
+  <!-- ============ QUICK TOOL WORKSPACE (Merge/Split/Organize/Watermark/Compress/Convert) ============ -->
+  <div id="quicktool">
+    <div id="qt-topbar">
+      <button id="qt-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <div>
+        <div id="qt-title">Tool</div>
+        <div id="qt-sub"></div>
+      </div>
+    </div>
+    <div id="qt-body"></div>
+  </div>
+
 
   <!-- ============ EDITOR ============ -->
   <div id="editor">
@@ -551,6 +808,90 @@ function setRandomLandingBackground(){
   img.src = primaryUrl;
 }
 
+/* ============================== Marketing content & tools registry ============================== */
+const TOOL_DEFS = [
+  { id:"edit", title:"Edit PDF", desc:"Change existing text, add text, images, shapes & annotations.", icon:"text", color:"#3452ff", accept:"application/pdf", multi:false },
+  { id:"merge", title:"Merge PDF", desc:"Combine two or more PDFs into a single file, in any order.", icon:"merge", color:"#7a5cff", accept:"application/pdf", multi:true },
+  { id:"split", title:"Split PDF", desc:"Pick pages and export them as separate PDF files in a zip.", icon:"split", color:"#2ecf7a", accept:"application/pdf", multi:false },
+  { id:"organize", title:"Organize Pages", desc:"Reorder, rotate, duplicate, or delete pages visually.", icon:"organize", color:"#ff8a3d", accept:"application/pdf", multi:false },
+  { id:"watermark", title:"Add Watermark", desc:"Stamp text across every page — color, size, and angle.", icon:"watermark", color:"#e0392b", accept:"application/pdf", multi:false },
+  { id:"compress", title:"Compress PDF", desc:"Shrink file size by re-encoding pages at a lower quality.", icon:"compress", color:"#0ea5a4", accept:"application/pdf", multi:false },
+  { id:"pdf2img", title:"PDF to JPG/PNG", desc:"Export every page as an image, downloaded as a zip.", icon:"image", color:"#c026d3", accept:"application/pdf", multi:false },
+  { id:"img2pdf", title:"JPG/PNG to PDF", desc:"Combine one or more images into a single PDF file.", icon:"image2pdf", color:"#2563eb", accept:"image/png,image/jpeg,image/webp", multi:true },
+];
+const TOOL_ICONS = {
+  text: ICON.text, merge:'<path d="M8 3v8l4 4 4-4V3"/><path d="M4 21h16"/><path d="M8 21v-5"/><path d="M16 21v-5"/>',
+  split:'<path d="M12 3v6"/><rect x="4" y="9" width="7" height="12" rx="1.5"/><rect x="13" y="9" width="7" height="12" rx="1.5"/>',
+  organize:'<rect x="3" y="4" width="7" height="9" rx="1.2"/><rect x="14" y="4" width="7" height="5" rx="1.2"/><rect x="14" y="12" width="7" height="8" rx="1.2"/><rect x="3" y="16" width="7" height="5" rx="1.2"/>',
+  watermark:'<path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M8 15l3-8 3 8"/><path d="M9 13h4"/>',
+  compress:'<path d="M8 3v4a1 1 0 0 1-1 1H3"/><path d="M21 8h-4a1 1 0 0 1-1-1V3"/><path d="M3 16h4a1 1 0 0 1 1 1v4"/><path d="M16 21v-4a1 1 0 0 1 1-1h4"/>',
+  image: ICON.image,
+  image2pdf:'<rect x="3" y="4" width="12" height="12" rx="1.5"/><circle cx="7" cy="8" r="1.2"/><path d="M15 13l-3.5-3.5L3 16"/><path d="M18 10v8M14 14h8"/>',
+};
+function toolIconSvg(name, color){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${TOOL_ICONS[name]||""}</svg>`;
+}
+
+const FEATURE_DEFS = [
+  { icon:"lock", title:"Everything stays on your device", desc:"Files are processed with JavaScript in your own browser tab. Nothing is uploaded, stored, or logged on a server." },
+  { icon:"zoomin", title:"No quality loss on edits", desc:"Original vector text, images, and layout are preserved wherever a tool doesn't need to change them." },
+  { icon:"undo", title:"Full undo history", desc:"Every edit in the editor can be undone or redone, so you can experiment without worrying about mistakes." },
+  { icon:"download", title:"No sign-up, no watermark", desc:"Use any tool immediately. Exported files are clean — PDFTune never stamps its own branding on your documents." },
+  { icon:"fitwidth", title:"Works on any device", desc:"A modern browser is all you need — desktop, laptop, tablet, or phone." },
+  { icon:"note", title:"Free to use", desc:"Every tool on this page is free, with no page limits, file-count limits, or premium paywall." },
+];
+
+const FAQ_DEFS = [
+  { q:"How can I edit text in a PDF?", a:"Open the Edit tool, click any line of existing text to edit it in place, or use Add Text to place new text anywhere on the page." },
+  { q:"Can I edit a PDF without converting it to Word?", a:"Yes — PDFTune opens and edits the original PDF directly, then exports a real PDF, no round-trip through Word." },
+  { q:"Can I edit a scanned PDF?", a:"Scanned pages can be made editable with built-in OCR text detection, flagged automatically when a page has no selectable text." },
+  { q:"Is my uploaded PDF stored anywhere?", a:"No. Every tool runs locally in your browser tab; nothing is uploaded or saved on a server." },
+  { q:"Can I merge PDFs of different page sizes?", a:"Yes — Merge PDF keeps each page's original size and simply appends the pages of every file you add, in the order you choose." },
+  { q:"Does Compress PDF reduce quality?", a:"Compress re-encodes each page as an image at a quality level you choose, which is great for scanned or image-heavy PDFs but will make sharp vector text slightly softer." },
+];
+
+function renderMarketingContent(){
+  const tg = document.getElementById('toolgridhost');
+  if (tg) tg.innerHTML = TOOL_DEFS.map(t=>`
+    <button class="toolcard" data-tool="${t.id}">
+      <div class="ticon" style="background:${t.color}1a;">${toolIconSvg(t.icon, t.color)}</div>
+      <h3>${t.title}</h3>
+      <p>${t.desc}</p>
+    </button>`).join('');
+  tg && tg.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click', ()=>openTool(b.dataset.tool)));
+
+  const fg = document.getElementById('featgridhost');
+  if (fg) fg.innerHTML = FEATURE_DEFS.map(f=>`
+    <div class="featcard">
+      <div class="ficon">${svg(f.icon)}</div>
+      <h3>${f.title}</h3>
+      <p>${f.desc}</p>
+    </div>`).join('');
+
+  const fq = document.getElementById('faqhost');
+  if (fq) fq.innerHTML = FAQ_DEFS.map(f=>`<div class="faqitem"><b>${f.q}</b><span>${f.a}</span></div>`).join('');
+
+  const hb = document.getElementById('herobullets');
+  if (hb) hb.innerHTML = ["No file uploads","Nothing installed","Unlimited use"].map(t=>
+    `<span><svg viewBox="0 0 24 24" fill="none" stroke="#8ef0ab" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>${t}</span>`).join('');
+
+  const cols = [
+    { title:"Edit", tools:["edit","organize","watermark"] },
+    { title:"Organize", tools:["merge","split","compress"] },
+    { title:"Convert", tools:["pdf2img","img2pdf"] },
+  ];
+  cols.forEach((c,i)=>{
+    const el = document.getElementById('footcol'+(i+1));
+    if (!el) return;
+    el.innerHTML = `<h4>${c.title}</h4>` + c.tools.map(id=>{
+      const t = TOOL_DEFS.find(x=>x.id===id);
+      return `<a data-tool="${id}">${t.title}</a>`;
+    }).join('');
+    el.querySelectorAll('[data-tool]').forEach(a=>a.addEventListener('click', ()=>openTool(a.dataset.tool)));
+  });
+  const yr = document.getElementById('yr'); if (yr) yr.textContent = new Date().getFullYear();
+}
+
 async function handleFile(file){
   if (!file) return;
   if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")){
@@ -581,6 +922,7 @@ async function handleFile(file){
     State.history = []; State.historyIndex = -1;
 
     document.getElementById('landing').style.display = 'none';
+    document.getElementById('quicktool').classList.remove('active');
     document.getElementById('editor').classList.add('active');
 
     buildTopbar();
@@ -1663,12 +2005,585 @@ function resetToLanding(){
   State.pdfDoc = null; State.originalBytes = null; State.pages = [];
   State.history = []; State.historyIndex = -1;
   document.getElementById('editor').classList.remove('active');
-  document.getElementById('landing').style.display = 'flex';
+  document.getElementById('quicktool').classList.remove('active');
+  document.getElementById('landing').style.display = '';
   document.getElementById('fileinput').value = "";
 }
 
+const QT_INIT = {}; // toolId -> function(container){...}  (filled in by each tool's implementation)
+
+function openTool(id){
+  if (id === "edit"){
+    document.getElementById('fileinput').click();
+    return;
+  }
+  const def = TOOL_DEFS.find(t=>t.id===id);
+  if (!def) return;
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('editor').classList.remove('active');
+  document.getElementById('quicktool').classList.add('active');
+  document.getElementById('qt-title').textContent = def.title;
+  document.getElementById('qt-sub').textContent = def.desc;
+  const body = document.getElementById('qt-body');
+  body.innerHTML = "";
+  const init = QT_INIT[id];
+  if (init) init(body, def);
+}
+
+
+/* ============================== Shared quick-tool helpers ============================== */
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+function qtPickFiles(opts, cb){
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = opts.accept || '';
+  if (opts.multiple) input.multiple = true;
+  input.onchange = ()=>{ if (input.files.length) cb(Array.from(input.files)); };
+  input.click();
+}
+function qtUploadZone(container, opts){
+  container.innerHTML = `
+    <div class="qt-upload" id="qtdz">
+      <div class="icon">${svg('upload')}</div>
+      <div class="ttl">${opts.title || 'Drop your file here'}</div>
+      <div class="hint">${opts.hint || 'or choose from your device'}</div>
+      <button class="choose" id="qtchoose" type="button" style="margin-top:14px;">Choose file${opts.multiple?'s':''}</button>
+    </div>`;
+  const dz = document.getElementById('qtdz');
+  document.getElementById('qtchoose').addEventListener('click', (e)=>{ e.stopPropagation(); qtPickFiles(opts, opts.onFiles); });
+  dz.addEventListener('click', ()=> qtPickFiles(opts, opts.onFiles));
+  ['dragenter','dragover'].forEach(ev=> dz.addEventListener(ev, (e)=>{ e.preventDefault(); e.stopPropagation(); dz.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(ev=> dz.addEventListener(ev, (e)=>{ e.preventDefault(); e.stopPropagation(); dz.classList.remove('drag'); }));
+  dz.addEventListener('drop', (e)=>{
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length) opts.onFiles(opts.multiple ? files : [files[0]]);
+  });
+}
+function qtDoneScreen(container, opts){
+  container.innerHTML = `
+    <div class="qt-donebox">
+      <div class="dicon"><svg viewBox="0 0 24 24" fill="none" stroke="#1f9d55" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
+      <h3>${opts.title}</h3>
+      <p>${opts.desc}</p>
+      <button class="qt-primary-btn" id="qtagain">${svg('upload')} Do it again</button>
+    </div>`;
+  document.getElementById('qtagain').addEventListener('click', ()=>{ if (opts.onAgain) opts.onAgain(); });
+}
+function loadImageFromFile(file){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=> resolve(img);
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+/* ============================== Tool: Merge PDF ============================== */
+QT_INIT.merge = function(container, def){
+  let files = [];
+  function renderList(){
+    container.innerHTML = `
+      <div class="qt-workarea">
+        <div class="qt-panel">
+          <h4>Files to merge, in this order</h4>
+          <div id="mergelist"></div>
+          <button class="qt-addmore" id="mergeaddmore">+ Add more PDFs</button>
+        </div>
+        <button class="qt-primary-btn" id="mergebtn">${svg('download')} Merge ${files.length} PDFs</button>
+      </div>`;
+    const list = document.getElementById('mergelist');
+    list.innerHTML = files.map((f,i)=>`
+      <div class="qt-filerow" data-id="${f.id}">
+        <div class="fthumb">${svg('text')}</div>
+        <div class="fname">${escapeHtml(f.file.name)}</div>
+        <div class="fsize">${(f.file.size/1024/1024).toFixed(1)} MB</div>
+        <button class="ficonbtn" data-act="up" ${i===0?'disabled':''} title="Move up">‹</button>
+        <button class="ficonbtn" data-act="down" ${i===files.length-1?'disabled':''} title="Move down">›</button>
+        <button class="ficonbtn" data-act="rm" title="Remove">${svg('trash')}</button>
+      </div>`).join('') || `<p style="font-size:13px;color:var(--ink-soft);">No files yet.</p>`;
+    list.querySelectorAll('.qt-filerow').forEach(row=>{
+      const id = row.dataset.id;
+      const up = row.querySelector('[data-act=up]'); if (up) up.addEventListener('click', ()=> moveFile(id,-1));
+      const down = row.querySelector('[data-act=down]'); if (down) down.addEventListener('click', ()=> moveFile(id,1));
+      row.querySelector('[data-act=rm]').addEventListener('click', ()=>{ files = files.filter(f=>f.id!==id); renderList(); });
+    });
+    document.getElementById('mergeaddmore').addEventListener('click', addMore);
+    const btn = document.getElementById('mergebtn');
+    btn.disabled = files.length < 2;
+    btn.addEventListener('click', doMerge);
+  }
+  function moveFile(id, dir){
+    const idx = files.findIndex(f=>f.id===id);
+    const swapIdx = idx+dir;
+    if (swapIdx<0 || swapIdx>=files.length) return;
+    [files[idx], files[swapIdx]] = [files[swapIdx], files[idx]];
+    renderList();
+  }
+  function addMore(){
+    qtPickFiles({ accept:'application/pdf', multiple:true }, (nf)=>{
+      nf.forEach(f=> files.push({ id:uid(), file:f }));
+      renderList();
+    });
+  }
+  async function doMerge(){
+    showLoading("Merging PDFs…");
+    try{
+      const { PDFDocument } = PDFLib;
+      const outDoc = await PDFDocument.create();
+      for (const f of files){
+        const bytes = await f.file.arrayBuffer();
+        const src = await PDFDocument.load(bytes);
+        const pages = await outDoc.copyPages(src, src.getPageIndices());
+        pages.forEach(p=> outDoc.addPage(p));
+      }
+      const bytes = await outDoc.save();
+      downloadBlob(new Blob([bytes],{type:'application/pdf'}), 'merged.pdf');
+      qtDoneScreen(container, { title:"Merged!", desc:`${files.length} PDFs combined into one file.`, onAgain:()=>openTool('merge') });
+    }catch(e){ console.error(e); toast("Couldn't merge these PDFs. Make sure they're valid, unlocked PDF files.", true); }
+    finally{ hideLoading(); }
+  }
+  qtUploadZone(container, {
+    accept:'application/pdf', multiple:true, title:'Drop 2 or more PDFs here', hint:'or choose files from your device',
+    onFiles:(fl)=>{ files = fl.map(f=>({ id:uid(), file:f })); renderList(); }
+  });
+};
+
+/* ============================== Tool: Split PDF ============================== */
+QT_INIT.split = function(container, def){
+  qtUploadZone(container, {
+    accept:'application/pdf', multiple:false, title:'Drop a PDF to split', hint:'or choose a file from your device',
+    onFiles:(fl)=> loadSplitFile(fl[0])
+  });
+
+  async function loadSplitFile(file){
+    showLoading("Opening PDF…");
+    let bytes, pdf;
+    try{
+      bytes = await file.arrayBuffer();
+      pdf = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
+    }catch(e){
+      toast("Couldn't open this PDF. It may be corrupted or password protected.", true); hideLoading(); return;
+    }
+    const selected = new Set();
+    container.innerHTML = `
+      <div class="qt-workarea">
+        <div class="qt-panel">
+          <h4>Select pages to export as separate PDFs (leave empty to split every page)</h4>
+          <div class="qt-row" style="margin-bottom:14px;">
+            <button class="btn-ghost" id="selall">Select all</button>
+            <button class="btn-ghost" id="selnone">Clear selection</button>
+          </div>
+          <div class="qt-pagegrid" id="splitgrid"></div>
+        </div>
+        <button class="qt-primary-btn" id="splitbtn">${svg('download')} Split PDF</button>
+      </div>`;
+    const grid = document.getElementById('splitgrid');
+    for (let i=0;i<pdf.numPages;i++){
+      const card = document.createElement('div');
+      card.className = 'qt-pagecard'; card.dataset.n = String(i+1);
+      card.innerHTML = `<div class="pth"><canvas></canvas></div><div class="plabel">Page ${i+1}</div>`;
+      card.addEventListener('click', ()=>{
+        const n = i+1;
+        if (selected.has(n)) selected.delete(n); else selected.add(n);
+        card.classList.toggle('sel');
+      });
+      grid.appendChild(card);
+      const pg = await pdf.getPage(i+1);
+      const vp = pg.getViewport({ scale: 0.3 });
+      const cv = card.querySelector('canvas'); cv.width = vp.width; cv.height = vp.height;
+      await pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+    }
+    document.getElementById('selall').addEventListener('click', ()=>{
+      grid.querySelectorAll('.qt-pagecard').forEach(c=>{ selected.add(parseInt(c.dataset.n,10)); c.classList.add('sel'); });
+    });
+    document.getElementById('selnone').addEventListener('click', ()=>{
+      selected.clear(); grid.querySelectorAll('.qt-pagecard').forEach(c=> c.classList.remove('sel'));
+    });
+    document.getElementById('splitbtn').addEventListener('click', async ()=>{
+      showLoading("Splitting PDF…");
+      try{
+        const { PDFDocument } = PDFLib;
+        const srcDoc = await PDFDocument.load(bytes);
+        const pagesToSplit = selected.size ? Array.from(selected).sort((a,b)=>a-b) : Array.from({length:pdf.numPages}, (_,i)=>i+1);
+        const zip = new JSZip();
+        const baseName = file.name.replace(/\.pdf$/i,'') || 'split';
+        for (const n of pagesToSplit){
+          const outDoc = await PDFDocument.create();
+          const [p] = await outDoc.copyPages(srcDoc, [n-1]);
+          outDoc.addPage(p);
+          const b = await outDoc.save();
+          zip.file(`${baseName}-page-${n}.pdf`, b);
+        }
+        const blob = await zip.generateAsync({ type:'blob' });
+        downloadBlob(blob, `${baseName}-split.zip`);
+        qtDoneScreen(container, { title:"Split complete!", desc:`${pagesToSplit.length} page PDF(s) downloaded as a zip.`, onAgain:()=>openTool('split') });
+      }catch(e){ console.error(e); toast("Couldn't split this PDF.", true); }
+      finally{ hideLoading(); }
+    });
+    hideLoading();
+  }
+};
+
+/* ============================== Tool: Organize Pages ============================== */
+QT_INIT.organize = function(container, def){
+  qtUploadZone(container, {
+    accept:'application/pdf', multiple:false, title:'Drop a PDF to organize', hint:'reorder, rotate, duplicate, or delete pages',
+    onFiles:(fl)=> loadOrganize(fl[0])
+  });
+
+  async function loadOrganize(file){
+    showLoading("Opening PDF…");
+    let bytes, pdf;
+    try{
+      bytes = await file.arrayBuffer();
+      pdf = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
+    }catch(e){
+      toast("Couldn't open this PDF.", true); hideLoading(); return;
+    }
+    let order = Array.from({length:pdf.numPages}, (_,i)=>({ id:uid(), src:i, rot:0 }));
+    container.innerHTML = `
+      <div class="qt-workarea">
+        <div class="qt-panel">
+          <h4>Reorder, rotate, duplicate, or remove pages</h4>
+          <div class="qt-pagegrid" id="orggrid"></div>
+        </div>
+        <button class="qt-primary-btn" id="orgbtn">${svg('download')} Download organized PDF</button>
+      </div>`;
+    const grid = document.getElementById('orggrid');
+    const pageCache = {};
+    async function getCanvas(item){
+      const pg = pageCache[item.src] || (pageCache[item.src] = await pdf.getPage(item.src+1));
+      const vp = pg.getViewport({ scale: 0.3 });
+      const cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
+      await pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+      return cv;
+    }
+    async function renderGrid(){
+      grid.innerHTML = "";
+      for (let idx=0; idx<order.length; idx++){
+        const item = order[idx];
+        const card = document.createElement('div');
+        card.className = 'qt-pagecard';
+        card.innerHTML = `
+          <div class="pth" style="overflow:visible;"><div style="transform:rotate(${item.rot}deg); width:100%; height:100%; display:flex; align-items:center; justify-content:center;" class="rotwrap"></div></div>
+          <div class="plabel">Page ${item.src+1}${item.dup?' · copy':''}</div>
+          <div class="qt-row" style="justify-content:center; gap:3px; margin-top:6px;">
+            <button class="ficonbtn" data-act="left" title="Move left" ${idx===0?'disabled':''}>‹</button>
+            <button class="ficonbtn" data-act="rotate" title="Rotate 90°">⟳</button>
+            <button class="ficonbtn" data-act="dup" title="Duplicate">⧉</button>
+            <button class="ficonbtn" data-act="del" title="Delete">${svg('trash')}</button>
+            <button class="ficonbtn" data-act="right" title="Move right" ${idx===order.length-1?'disabled':''}>›</button>
+          </div>`;
+        const l = card.querySelector('[data-act=left]'); if (l) l.addEventListener('click', ()=>{ [order[idx-1],order[idx]]=[order[idx],order[idx-1]]; renderGrid(); });
+        const r = card.querySelector('[data-act=right]'); if (r) r.addEventListener('click', ()=>{ [order[idx+1],order[idx]]=[order[idx],order[idx+1]]; renderGrid(); });
+        card.querySelector('[data-act=rotate]').addEventListener('click', ()=>{ item.rot = (item.rot+90)%360; renderGrid(); });
+        card.querySelector('[data-act=dup]').addEventListener('click', ()=>{ order.splice(idx+1,0,{ id:uid(), src:item.src, rot:item.rot, dup:true }); renderGrid(); });
+        card.querySelector('[data-act=del]').addEventListener('click', ()=>{
+          if (order.length<=1){ toast("A PDF needs at least one page.", true); return; }
+          order.splice(idx,1); renderGrid();
+        });
+        grid.appendChild(card);
+        const cv = await getCanvas(item);
+        card.querySelector('.rotwrap').appendChild(cv);
+        cv.style.maxWidth = "100%"; cv.style.maxHeight = "100%";
+      }
+    }
+    await renderGrid();
+    hideLoading();
+    document.getElementById('orgbtn').addEventListener('click', async ()=>{
+      showLoading("Building your PDF…");
+      try{
+        const { PDFDocument, degrees } = PDFLib;
+        const srcDoc = await PDFDocument.load(bytes);
+        const outDoc = await PDFDocument.create();
+        for (const item of order){
+          const [p] = await outDoc.copyPages(srcDoc, [item.src]);
+          if (item.rot) p.setRotation(degrees((p.getRotation().angle + item.rot) % 360));
+          outDoc.addPage(p);
+        }
+        const out = await outDoc.save();
+        const baseName = file.name.replace(/\.pdf$/i,'') || 'organized';
+        downloadBlob(new Blob([out],{type:'application/pdf'}), `${baseName}-organized.pdf`);
+        qtDoneScreen(container, { title:"Done!", desc:`Your organized PDF (${order.length} pages) is ready.`, onAgain:()=>openTool('organize') });
+      }catch(e){ console.error(e); toast("Couldn't build the PDF.", true); }
+      finally{ hideLoading(); }
+    });
+  }
+};
+
+/* ============================== Tool: Add Watermark ============================== */
+QT_INIT.watermark = function(container, def){
+  qtUploadZone(container, {
+    accept:'application/pdf', multiple:false, title:'Drop a PDF to watermark', hint:'stamp text across every page',
+    onFiles:(fl)=> loadWatermark(fl[0])
+  });
+
+  async function loadWatermark(file){
+    const bytes = await file.arrayBuffer();
+    const opts = { text:"CONFIDENTIAL", color:"#3452ff", opacity:0.28, size:52, rotation:-35 };
+    container.innerHTML = `
+      <div class="qt-workarea">
+        <div class="qt-panel">
+          <h4>Watermark settings</h4>
+          <div class="qt-row" style="gap:16px; margin-bottom:16px; align-items:flex-end;">
+            <div class="qt-field" style="flex:1; min-width:200px;">Watermark text
+              <input type="text" id="wmtext" value="${escapeHtml(opts.text)}">
+            </div>
+            <div class="qt-field">Color
+              <input type="color" id="wmcolor" value="${opts.color}">
+            </div>
+          </div>
+          <div class="qt-row" style="gap:26px; flex-wrap:wrap;">
+            <div class="qt-field">Opacity <input type="range" id="wmop" min="10" max="70" value="${opts.opacity*100}"></div>
+            <div class="qt-field">Size <input type="range" id="wmsize" min="20" max="120" value="${opts.size}"></div>
+            <div class="qt-field">Angle <input type="range" id="wmrot" min="-90" max="90" value="${opts.rotation}"></div>
+          </div>
+        </div>
+        <button class="qt-primary-btn" id="wmbtn">${svg('download')} Add watermark &amp; download</button>
+      </div>`;
+    document.getElementById('wmtext').addEventListener('input', e=> opts.text = e.target.value);
+    document.getElementById('wmcolor').addEventListener('input', e=> opts.color = e.target.value);
+    document.getElementById('wmop').addEventListener('input', e=> opts.opacity = e.target.value/100);
+    document.getElementById('wmsize').addEventListener('input', e=> opts.size = parseInt(e.target.value,10));
+    document.getElementById('wmrot').addEventListener('input', e=> opts.rotation = parseInt(e.target.value,10));
+    document.getElementById('wmbtn').addEventListener('click', async ()=>{
+      if (!opts.text.trim()){ toast("Enter watermark text first.", true); return; }
+      showLoading("Applying watermark…");
+      try{
+        const { PDFDocument, rgb, StandardFonts, degrees } = PDFLib;
+        const doc = await PDFDocument.load(bytes);
+        const font = await doc.embedFont(StandardFonts.HelveticaBold);
+        const c = hexToRgb01(opts.color);
+        for (const page of doc.getPages()){
+          const { width, height } = page.getSize();
+          const tw = font.widthOfTextAtSize(opts.text, opts.size);
+          page.drawText(opts.text, {
+            x: width/2 - tw/2, y: height/2, size: opts.size, font,
+            color: rgb(c.r,c.g,c.b), opacity: opts.opacity, rotate: degrees(opts.rotation),
+          });
+        }
+        const out = await doc.save();
+        const baseName = file.name.replace(/\.pdf$/i,'') || 'document';
+        downloadBlob(new Blob([out],{type:'application/pdf'}), `${baseName}-watermarked.pdf`);
+        qtDoneScreen(container, { title:"Watermark added!", desc:"Every page now has your watermark.", onAgain:()=>openTool('watermark') });
+      }catch(e){ console.error(e); toast("Couldn't add the watermark to this PDF.", true); }
+      finally{ hideLoading(); }
+    });
+  }
+};
+
+/* ============================== Tool: Compress PDF ============================== */
+QT_INIT.compress = function(container, def){
+  qtUploadZone(container, {
+    accept:'application/pdf', multiple:false, title:'Drop a PDF to compress', hint:'re-encodes each page at a smaller size',
+    onFiles:(fl)=> loadCompress(fl[0])
+  });
+
+  async function loadCompress(file){
+    const bytes = await file.arrayBuffer();
+    const originalSize = file.size;
+    let quality = 0.55;
+    container.innerHTML = `
+      <div class="qt-workarea">
+        <div class="qt-panel">
+          <h4>Compression level</h4>
+          <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 16px;line-height:1.5;">
+            Lower quality makes a smaller file, but text and fine detail get softer since every page is re-encoded as an image.
+            Works best on scanned or image-heavy PDFs.
+          </p>
+          <div class="qt-row" style="gap:14px; align-items:center;">
+            <div class="qt-field">Quality<input type="range" id="cqual" min="20" max="90" value="55"></div>
+            <span id="cquallabel" style="font-size:13px;font-weight:700;color:var(--ink);">55%</span>
+          </div>
+        </div>
+        <button class="qt-primary-btn" id="cbtn">${svg('download')} Compress &amp; download</button>
+      </div>`;
+    document.getElementById('cqual').addEventListener('input', e=>{
+      quality = e.target.value/100;
+      document.getElementById('cquallabel').textContent = e.target.value+"%";
+    });
+    document.getElementById('cbtn').addEventListener('click', async ()=>{
+      showLoading("Compressing PDF…");
+      try{
+        const pdf = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
+        const { PDFDocument } = PDFLib;
+        const outDoc = await PDFDocument.create();
+        for (let i=0;i<pdf.numPages;i++){
+          const pg = await pdf.getPage(i+1);
+          const vp = pg.getViewport({ scale: 1.4 });
+          const cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
+          await pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+          const jpgDataUrl = cv.toDataURL('image/jpeg', quality);
+          const jpgBytes = await (await fetch(jpgDataUrl)).arrayBuffer();
+          const img = await outDoc.embedJpg(jpgBytes);
+          const pageVp = pg.getViewport({ scale: 1 });
+          const page = outDoc.addPage([pageVp.width, pageVp.height]);
+          page.drawImage(img, { x:0, y:0, width:pageVp.width, height:pageVp.height });
+        }
+        const out = await outDoc.save();
+        const blob = new Blob([out],{type:'application/pdf'});
+        const baseName = file.name.replace(/\.pdf$/i,'') || 'document';
+        downloadBlob(blob, `${baseName}-compressed.pdf`);
+        const pct = Math.max(0, Math.round((1 - blob.size/originalSize)*100));
+        qtDoneScreen(container, {
+          title:"Compressed!",
+          desc: pct>0 ? `File size reduced by about ${pct}%.` : "Done — this PDF was already quite small.",
+          onAgain:()=>openTool('compress')
+        });
+      }catch(e){ console.error(e); toast("Couldn't compress this PDF.", true); }
+      finally{ hideLoading(); }
+    });
+  }
+};
+
+/* ============================== Tool: PDF to JPG/PNG ============================== */
+QT_INIT.pdf2img = function(container, def){
+  qtUploadZone(container, {
+    accept:'application/pdf', multiple:false, title:'Drop a PDF to convert', hint:'export every page as an image',
+    onFiles:(fl)=> loadP2I(fl[0])
+  });
+
+  async function loadP2I(file){
+    const bytes = await file.arrayBuffer();
+    let fmt = 'jpeg';
+    container.innerHTML = `
+      <div class="qt-workarea">
+        <div class="qt-panel">
+          <h4>Export format</h4>
+          <div class="qt-row" style="gap:18px;">
+            <label class="qt-field" style="flex-direction:row; align-items:center; gap:7px; cursor:pointer;"><input type="radio" name="p2ifmt" value="jpeg" checked> JPG</label>
+            <label class="qt-field" style="flex-direction:row; align-items:center; gap:7px; cursor:pointer;"><input type="radio" name="p2ifmt" value="png"> PNG</label>
+          </div>
+        </div>
+        <button class="qt-primary-btn" id="p2ibtn">${svg('download')} Convert &amp; download</button>
+      </div>`;
+    container.querySelectorAll('[name=p2ifmt]').forEach(r=> r.addEventListener('change', e=>{ fmt = e.target.value; }));
+    document.getElementById('p2ibtn').addEventListener('click', async ()=>{
+      showLoading("Rendering pages…");
+      try{
+        const pdf = await pdfjsLib.getDocument({ data: bytes.slice(0) }).promise;
+        const baseName = file.name.replace(/\.pdf$/i,'') || 'page';
+        const ext = fmt==='jpeg' ? 'jpg' : 'png';
+        if (pdf.numPages === 1){
+          const pg = await pdf.getPage(1);
+          const vp = pg.getViewport({ scale: 2 });
+          const cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
+          await pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+          const dataUrl = cv.toDataURL('image/'+fmt, fmt==='jpeg'?0.92:undefined);
+          const blob = await (await fetch(dataUrl)).blob();
+          downloadBlob(blob, `${baseName}.${ext}`);
+        } else {
+          const zip = new JSZip();
+          for (let i=0;i<pdf.numPages;i++){
+            const pg = await pdf.getPage(i+1);
+            const vp = pg.getViewport({ scale: 2 });
+            const cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
+            await pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+            const dataUrl = cv.toDataURL('image/'+fmt, fmt==='jpeg'?0.92:undefined);
+            const b64 = dataUrl.split(',')[1];
+            zip.file(`${baseName}-page-${i+1}.${ext}`, b64, { base64:true });
+          }
+          const blob = await zip.generateAsync({ type:'blob' });
+          downloadBlob(blob, `${baseName}-images.zip`);
+        }
+        qtDoneScreen(container, { title:"Converted!", desc:`${pdf.numPages} page(s) exported as ${fmt.toUpperCase()}.`, onAgain:()=>openTool('pdf2img') });
+      }catch(e){ console.error(e); toast("Couldn't convert this PDF.", true); }
+      finally{ hideLoading(); }
+    });
+  }
+};
+
+/* ============================== Tool: JPG/PNG to PDF ============================== */
+QT_INIT.img2pdf = function(container, def){
+  let images = [];
+  function renderList(){
+    container.innerHTML = `
+      <div class="qt-workarea">
+        <div class="qt-panel">
+          <h4>Images to combine, in this order</h4>
+          <div id="imglist"></div>
+          <button class="qt-addmore" id="imgaddmore">+ Add more images</button>
+        </div>
+        <button class="qt-primary-btn" id="imgbtn">${svg('download')} Combine into PDF</button>
+      </div>`;
+    const list = document.getElementById('imglist');
+    list.innerHTML = images.map((im,i)=>`
+      <div class="qt-filerow" data-id="${im.id}">
+        <div class="fthumb">${svg('image')}</div>
+        <div class="fname">${escapeHtml(im.file.name)}</div>
+        <div class="fsize">${(im.file.size/1024).toFixed(0)} KB</div>
+        <button class="ficonbtn" data-act="up" ${i===0?'disabled':''} title="Move up">‹</button>
+        <button class="ficonbtn" data-act="down" ${i===images.length-1?'disabled':''} title="Move down">›</button>
+        <button class="ficonbtn" data-act="rm" title="Remove">${svg('trash')}</button>
+      </div>`).join('') || `<p style="font-size:13px;color:var(--ink-soft);">No images yet.</p>`;
+    list.querySelectorAll('.qt-filerow').forEach(row=>{
+      const id = row.dataset.id;
+      const up = row.querySelector('[data-act=up]'); if (up) up.addEventListener('click', ()=>{ const i=images.findIndex(x=>x.id===id); [images[i-1],images[i]]=[images[i],images[i-1]]; renderList(); });
+      const down = row.querySelector('[data-act=down]'); if (down) down.addEventListener('click', ()=>{ const i=images.findIndex(x=>x.id===id); [images[i+1],images[i]]=[images[i],images[i+1]]; renderList(); });
+      row.querySelector('[data-act=rm]').addEventListener('click', ()=>{ images = images.filter(x=>x.id!==id); renderList(); });
+    });
+    document.getElementById('imgaddmore').addEventListener('click', ()=>{
+      qtPickFiles({ accept:'image/png,image/jpeg,image/webp', multiple:true }, (nf)=>{ nf.forEach(f=> images.push({ id:uid(), file:f })); renderList(); });
+    });
+    const btn = document.getElementById('imgbtn');
+    btn.disabled = images.length < 1;
+    btn.addEventListener('click', doCombine);
+  }
+  async function doCombine(){
+    showLoading("Building PDF…");
+    try{
+      const { PDFDocument } = PDFLib;
+      const doc = await PDFDocument.create();
+      for (const im of images){
+        let bytes = await im.file.arrayBuffer();
+        let isPng = im.file.type.includes('png');
+        let isJpg = im.file.type.includes('jpeg') || im.file.type.includes('jpg');
+        if (!isPng && !isJpg){
+          const imgEl = await loadImageFromFile(im.file);
+          const cv = document.createElement('canvas'); cv.width = imgEl.naturalWidth; cv.height = imgEl.naturalHeight;
+          cv.getContext('2d').drawImage(imgEl, 0, 0);
+          bytes = await (await fetch(cv.toDataURL('image/png'))).arrayBuffer();
+          isPng = true;
+        }
+        const embedded = isPng ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
+        const w = embedded.width, h = embedded.height;
+        const page = doc.addPage([w, h]);
+        page.drawImage(embedded, { x:0, y:0, width:w, height:h });
+      }
+      const out = await doc.save();
+      downloadBlob(new Blob([out],{type:'application/pdf'}), 'images.pdf');
+      qtDoneScreen(container, { title:"PDF created!", desc:`${images.length} image(s) combined into one PDF.`, onAgain:()=>openTool('img2pdf') });
+    }catch(e){ console.error(e); toast("Couldn't combine these images.", true); }
+    finally{ hideLoading(); }
+  }
+  qtUploadZone(container, {
+    accept:'image/png,image/jpeg,image/webp', multiple:true, title:'Drop images here', hint:'JPG, PNG, or WEBP — combined in the order shown',
+    onFiles:(fl)=>{ images = fl.map(f=>({ id:uid(), file:f })); renderList(); }
+  });
+};
+
 document.addEventListener('DOMContentLoaded', ()=>{
   setRandomLandingBackground();
+  renderMarketingContent();
+
+  document.getElementById('qt-back').addEventListener('click', resetToLanding);
+  document.getElementById('navlogo').addEventListener('click', resetToLanding);
+  document.getElementById('navcta').addEventListener('click', ()=>{
+    const dz = document.getElementById('dropzone');
+    if (dz) dz.scrollIntoView({ behavior:'smooth', block:'center' });
+  });
+  document.querySelectorAll('.nav-links [data-scroll]').forEach(a=>{
+    a.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const target = document.getElementById(a.dataset.scroll);
+      if (target) target.scrollIntoView({ behavior:'smooth', block:'start' });
+    });
+  });
+
   const dz = document.getElementById('dropzone');
   const fi = document.getElementById('fileinput');
   document.getElementById('choosebtn').addEventListener('click', (e)=>{ e.stopPropagation(); fi.click(); });
